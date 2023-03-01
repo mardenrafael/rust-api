@@ -18,8 +18,5 @@ fn config_rocket() -> rocket::Rocket {
         .manage(UserService::new())
 }
 fn main() {
-
-    // let user_to_save: User = User { id: 1, name: "Marden".to_string(), email: "marden@gmail.com".to_string() };
-
     config_rocket().launch();
 }
