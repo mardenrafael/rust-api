@@ -1,8 +1,18 @@
-pub struct UserService {
+use rocket_contrib::json::Json;
 
+use crate::models::user::User;
+
+pub struct UserService {
 }
 
 impl UserService {
+    pub fn new() -> Self { Self {  } }
+
+
+    pub fn create_user(&self, user_to_save: Json<User>)-> Result<Json<User>, ()> {   
+        println!("Make some validations and business logic");     
+        return  Ok(user_to_save);
+    }
 
     /// Get all users
     pub fn get_all_users() -> () {
