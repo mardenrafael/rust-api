@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 diesel = { version = "2.0.3", features = ["postgres"] }
+dotenv = "0.15.0"
 rocket = "0.4.11"
-dotenvy = "0.15"
-serde = { version = "1.0.152", features = ["derive"]}
+serde = { version = "1.0.152", features = ["derive"] }
 
 
 [dependencies.rocket_contrib]
