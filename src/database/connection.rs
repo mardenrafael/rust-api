@@ -1,33 +1,13 @@
-use diesel::{Connection, ConnectionResult, PgConnection};
-use std::env;
+use diesel::{Connection, PgConnection};
 
-pub fn establish_connection() -> () {
-    let database_host = env::var("DATABASE_HOST");
-    let database_port = env::var("DATABASE_PORT");
-    let database_url: String;
-    let pg_connection: ConnectionResult<PgConnection>;
+use crate::utils::env_vars::get_env;
 
-    match database_host {
-        Ok(db_host) => match database_port {
-            Ok(port) => {
-                database_url = format!(
-                    "postgres://postgres:g8osw5TOX8OAnSXO@{}:{}/postgres",
-                    db_host, port
-                );
-            }
-            Err(e) => panic!("Error on load Database port env var, Error: {}", e),
-        },
-        Err(e) => panic!("Error on load Database host env var, Error: {}", e),
-    }
+pub fn establish_connection() -> PgConnection {
+    // let database_host: String = get_env("DATABASE_HOST");
+    // let database_name: String = get_env("DATABASE_NAME");
+    let database_url = get_env("DATABASE_URL");
+    // let database_url: String = format!("postgres://{}/{}", database_host, database_name);
 
-    pg_connection = PgConnection::establish(&database_url);
-
-    match pg_connection {
-        Ok(_) => {
-            println!("Sucess connect with database")
-        }
-        Err(err) => {
-            panic!("Error on connect with data base, err: {}", err)
-        }
-    }
+    PgConnection::establish(&database_url).unwrap_or_else(|e| panic!("Error on connect: {}", e))
+    // println!("{}", &database_url);
 }
