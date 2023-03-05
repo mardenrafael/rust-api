@@ -5,7 +5,6 @@ extern crate rocket;
 extern crate diesel;
 
 pub mod controllers;
-pub mod database;
 pub mod models;
 pub mod services;
 pub mod utils;
@@ -16,7 +15,7 @@ use utils::supa_api::SupaApi;
 
 use utils::http_verbs::HttpVerbs;
 
-fn _config_rocket() -> rocket::Rocket {
+fn config_rocket() -> rocket::Rocket {
     rocket::ignite()
         .mount("/api", routes![user_controller::create_user])
         .manage(UserService::new())
@@ -25,7 +24,8 @@ fn _config_rocket() -> rocket::Rocket {
 fn main() {
     dotenv::dotenv().ok();
 
-    let res = SupaApi::make_request(HttpVerbs::DELETE, "/rest/v1/users")
-        .unwrap_or_else(|e| panic!("{}", e));
+    // config_rocket().launch();
+    let res = SupaApi::make_request(HttpVerbs::GET, "rest/v1/Users", Some("?id=eq.2"), None)
+        .unwrap_or_else(|e| -> _ { panic!("{}", e) });
     println!("{}", res);
 }

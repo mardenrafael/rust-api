@@ -1,72 +1,97 @@
+use std::collections::HashMap;
+
 use reqwest::blocking::Client;
 
 use crate::utils::env_vars::get_env;
 
-use super::{either::Either, http_verbs::HttpVerbs};
+use super::http_verbs::HttpVerbs;
 
 pub struct SupaApi {}
 
 impl SupaApi {
-    /// make request to supabase
     pub fn make_request(
         verb: HttpVerbs,
         end_point: &str,
-    ) -> Result<String, Result<reqwest::Error, &str>> {
-        let client: reqwest::blocking::Client = Client::new(); // Reqwest Client to provide requestBuilder
-        let supa_url: String = get_env("DATABASE_HOST"); // Supabase URL
-        let op_req_builder: Option<reqwest::blocking::RequestBuilder>;
-        // let supa_res: Result<reqwest::blocking::Response, reqwest::Error> = client
-        //     .get(supa_url.to_owned() + end_point)
-        //     .query(&[("apikey", &get_env("PRIVATE_API_KEY"))])
-        //     .send();
+        query: Option<&str>,
+        body: Option<HashMap<String, String>>,
+    ) -> Result<String, reqwest::Error> {
+        let client: reqwest::blocking::Client = Client::new();
 
-        if verb == HttpVerbs::GET {
-            println!(
-                "Making request to: {} \n\t Method: {}",
-                supa_url.clone() + end_point,
-                verb
-            );
+        let mut supa_host: String = Default::default();
+        get_env("DATABASE_HOST", &mut supa_host);
 
-            op_req_builder = Some(client.get(supa_url.clone() + end_point));
+        let mut private_key: String = Default::default();
+        get_env("PRIVATE_API_KEY", &mut private_key);
+
+        let query_params: &str;
+        let request_body: HashMap<String, String>;
+
+        query_params = match query {
+            Some(matched_query_params) => matched_query_params,
+            None => "",
+        };
+
+        // TODO: Use Json from serde for post, put and patch request
+        match body {
+            Some(body_hashmap) => request_body = body_hashmap,
+            None => request_body = HashMap::new(),
         }
 
-        if verb == HttpVerbs::POST {
-            println!(
-                "Making request to: {} \n\t Method: {}",
-                supa_url.clone() + end_point,
-                verb
-            );
-        }
-        if verb == HttpVerbs::PUT {
-            println!(
-                "Making request to: {} \n\t Method: {}",
-                supa_url.clone() + end_point,
-                verb
-            );
-        }
-        if verb == HttpVerbs::DELETE {
-            println!(
-                "Making request to: {} \n\t Method: {}",
-                supa_url + end_point,
-                verb
-            );
+        let supa_url: String = supa_host.to_owned() + end_point + query_params;
+        println!("{}", supa_url);
+        let mut op_req_builder: Option<reqwest::blocking::RequestBuilder> = None;
+
+        match verb {
+            HttpVerbs::GET => {
+                op_req_builder = Some(client.get(&supa_url).query(&[("apikey", private_key)]))
+            }
+            HttpVerbs::POST => {
+                op_req_builder = Some(
+                    client
+                        .post(&supa_url)
+                        .query(&[("apikey", private_key)])
+                        .json(&request_body),
+                )
+            }
+            HttpVerbs::PUT => {
+                op_req_builder = Some(client.put(&supa_url).query(&[("apikey", private_key)]))
+            }
+            HttpVerbs::DELETE => {
+                op_req_builder = Some(client.delete(&supa_url).query(&[("apikey", private_key)]))
+            }
+            HttpVerbs::PATCH => {
+                op_req_builder = Some(
+                    client
+                        .patch(&supa_url)
+                        .query(&[("apikey", private_key)])
+                        .json(&request_body),
+                )
+            }
         }
 
-        if let Some(req_builder) = op_req_builder {
-            req_builder.send();
-        } else {
-            Err::<reqwest::Error, &str>("Erro on build request");
-        }
+        let response = match op_req_builder {
+            Some(request) => request.send(),
+            None => {
+                // TODO: Trater erro de forma correta
+                panic!("request not build proper")
+            }
+        };
 
-        match Some(op_req_builder) {
-            Some(req_builder) => {}
-            None => todo!(),
+        match response {
+            Ok(data) => match data.text() {
+                Ok(text) => {
+                    if text.is_empty() {
+                        Ok("No content response".to_string())
+                    } else {
+                        Ok(text)
+                    }
+                }
+                Err(err) => Err(err),
+            },
+            // TODO: tratar erros da forma correta
+            Err(e) => {
+                panic!("{}", e);
+            }
         }
-
-        Ok("Return Result of request!".to_string())
-        // match supa_res {
-        //     Ok(res) => res.text(),
-        //     Err(err) => Err(err),
-        // }
     }
 }

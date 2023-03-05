@@ -6,6 +6,7 @@ pub enum HttpVerbs {
     POST,
     PUT,
     DELETE,
+    PATCH,
 }
 
 impl Display for HttpVerbs {
@@ -22,6 +23,9 @@ impl Display for HttpVerbs {
             }
             HttpVerbs::DELETE => {
                 writeln!(f, "DELETE")
+            }
+            HttpVerbs::PATCH => {
+                writeln!(f, "PATCH")
             }
         }
     }
