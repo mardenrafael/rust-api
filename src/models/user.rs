@@ -4,13 +4,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub email: String,
+    pub id: Option<i8>,
+    pub name: Option<String>,
+    pub email: Option<String>,
 }
 
 impl Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(User: {} {} {})", self.id, self.name, self.email)
+        writeln!(
+            f,
+            "id: {:#?}, \n name: {:#?}, \n email {:#?} \n\t",
+            self.id, self.name, self.email
+        )
     }
 }

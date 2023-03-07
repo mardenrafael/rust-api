@@ -1,19 +1,23 @@
-use std::collections::HashMap;
-
 use reqwest::blocking::Client;
+use rocket_contrib::json::Json;
 
-use crate::utils::env_vars::get_env;
+use crate::{models::user::User, utils::env_vars::get_env};
 
 use super::http_verbs::HttpVerbs;
 
 pub struct SupaApi {}
 
 impl SupaApi {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn make_request(
+        &self,
         verb: HttpVerbs,
         end_point: &str,
         query: Option<&str>,
-        body: Option<HashMap<String, String>>,
+        body: Option<Json<User>>,
     ) -> Result<String, reqwest::Error> {
         let client: reqwest::blocking::Client = Client::new();
 
@@ -24,7 +28,7 @@ impl SupaApi {
         get_env("PRIVATE_API_KEY", &mut private_key);
 
         let query_params: &str;
-        let request_body: HashMap<String, String>;
+        let request_body: Json<User>;
 
         query_params = match query {
             Some(matched_query_params) => matched_query_params,
@@ -33,12 +37,17 @@ impl SupaApi {
 
         // TODO: Use Json from serde for post, put and patch request
         match body {
-            Some(body_hashmap) => request_body = body_hashmap,
-            None => request_body = HashMap::new(),
+            Some(json_body) => request_body = json_body,
+            None => {
+                request_body = Json::from(rocket_contrib::json::Json(User {
+                    id: None,
+                    name: None,
+                    email: None,
+                }))
+            }
         }
 
         let supa_url: String = supa_host.to_owned() + end_point + query_params;
-        println!("{}", supa_url);
         let mut op_req_builder: Option<reqwest::blocking::RequestBuilder> = None;
 
         match verb {
@@ -50,7 +59,7 @@ impl SupaApi {
                     client
                         .post(&supa_url)
                         .query(&[("apikey", private_key)])
-                        .json(&request_body),
+                        .json(&request_body.0),
                 )
             }
             HttpVerbs::PUT => {
@@ -64,18 +73,12 @@ impl SupaApi {
                     client
                         .patch(&supa_url)
                         .query(&[("apikey", private_key)])
-                        .json(&request_body),
+                        .json(&request_body.0),
                 )
             }
         }
 
-        let response = match op_req_builder {
-            Some(request) => request.send(),
-            None => {
-                // TODO: Trater erro de forma correta
-                panic!("request not build proper")
-            }
-        };
+        let response = op_req_builder.unwrap().send();
 
         match response {
             Ok(data) => match data.text() {
