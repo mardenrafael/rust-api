@@ -2,7 +2,6 @@
 
 #[macro_use]
 extern crate rocket;
-extern crate diesel;
 
 pub mod controllers;
 pub mod models;
